@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VCF 9.0 on Holodeck | MahesanT</title>
+<meta name="description" content="End-to-end VMware Cloud Foundation 9.0 deployment using Holodeck, nested ESXi, Offline Depot, NSX, vSAN and VCF Operations.">
+<style>
+:root{
+  --bg:#0b1220; --panel:#111a2b; --soft:#18243a; --text:#e8eef8; --muted:#9fb0c8;
+  --blue:#56b4ff; --green:#4fd18b; --amber:#ffcc66; --line:#263650; --code:#08101d;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:linear-gradient(180deg,#08111f,#0d1728 28%,#0b1220);color:var(--text);font:16px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+a{color:#8dcbff;text-decoration:none} a:hover{text-decoration:underline}
+header{position:sticky;top:0;z-index:10;background:rgba(8,17,31,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.nav{max-width:1180px;margin:auto;padding:12px 22px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.nav strong{margin-right:auto}.nav a{font-size:14px;color:#c8d7ea}
+.hero{max-width:1180px;margin:0 auto;padding:72px 22px 44px}
+.badge{display:inline-block;padding:6px 10px;border:1px solid #31527b;border-radius:999px;color:#a9d8ff;background:#0e2036;font-size:13px}
+h1{font-size:clamp(40px,7vw,78px);line-height:1.02;margin:18px 0 14px;letter-spacing:-.04em}
+h1 span{color:var(--blue)}
+.lead{font-size:20px;max-width:820px;color:#c3d1e5}
+.hero-grid,.grid{display:grid;gap:16px}
+.hero-grid{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:30px}
+.card{background:linear-gradient(180deg,var(--panel),#0d1626);border:1px solid var(--line);border-radius:16px;padding:20px}
+.metric b{display:block;font-size:26px;color:#fff}.metric span{color:var(--muted);font-size:13px}
+main{max-width:1180px;margin:auto;padding:0 22px 80px}
+section{padding:48px 0;border-top:1px solid var(--line)}
+h2{font-size:32px;margin:0 0 16px} h3{font-size:21px;margin:26px 0 10px}
+p,li{color:#c9d6e8}.muted{color:var(--muted)}
+.grid.two{grid-template-columns:1fr 1fr}.grid.three{grid-template-columns:repeat(3,1fr)}
+table{width:100%;border-collapse:collapse;background:#0d1728;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:#fff;background:#142139}td{color:#cbd8e8}
+pre{white-space:pre-wrap;overflow:auto;background:var(--code);border:1px solid #24344d;border-radius:12px;padding:15px;color:#d8e8ff}
+code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.92em}
+figure{margin:22px 0;background:#09121f;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+figure img{width:100%;display:block}
+figcaption{padding:10px 14px;color:var(--muted);font-size:13px}
+.phase{display:grid;grid-template-columns:60px 1fr;gap:14px;margin:18px 0}
+.num{height:44px;width:44px;border-radius:50%;display:grid;place-items:center;background:#113252;border:1px solid #2d6ea1;color:#bfe4ff;font-weight:700}
+.ok{color:var(--green)}.warn{color:var(--amber)}
+.timeline{border-left:2px solid #27405f;margin-left:20px;padding-left:22px}
+.callout{border-left:4px solid var(--blue);padding:14px 16px;background:#0e1b2d;border-radius:0 10px 10px 0}
+.footer{max-width:1180px;margin:auto;padding:25px 22px 45px;color:#8094ad;font-size:13px;border-top:1px solid var(--line)}
+@media(max-width:850px){.hero-grid,.grid.two,.grid.three{grid-template-columns:1fr 1fr}.nav a{display:none}}
+@media(max-width:560px){.hero-grid,.grid.two,.grid.three{grid-template-columns:1fr}h1{font-size:44px}}
+</style>
+</head>
+<body>
+<header>
+  <nav class="nav">
+    <strong>MahesanT / VCF</strong>
+    <a href="#architecture">Architecture</a>
+    <a href="#build">Build</a>
+    <a href="#depot">Offline Depot</a>
+    <a href="#deployment">Deployment</a>
+    <a href="#operations">Operations</a>
+    <a href="../RUNBOOK.md">Command Runbook</a>
+  </nav>
+</header>
+
+<div class="hero">
+  <span class="badge">Hands-on home lab • VMware Cloud Foundation 9.0</span>
+  <h1>VCF 9.0 <span>on Holodeck</span></h1>
+  <p class="lead">A real end-to-end deployment of VMware Cloud Foundation 9.0 using two physical ESXi hosts, nested ESXi, a shared NFS datastore, an Offline Depot, VCF Download Tool 9.1.1, NSX, vSAN OSA, SDDC Manager and VCF Operations.</p>
+  <div class="hero-grid">
+    <div class="card metric"><b>4</b><span>Nested ESXi hosts</span></div>
+    <div class="card metric"><b>~478 GB</b><span>Combined physical RAM</span></div>
+    <div class="card metric"><b>53 GB</b><span>VCF Day-0 binaries staged</span></div>
+    <div class="card metric"><b class="ok">100%</b><span>Management-domain deployment</span></div>
+  </div>
+</div>
+
+<main>
+<section id="architecture">
+<h2>Lab architecture</h2>
+<p>The lab spans two physical ESXi hosts connected by direct 10 Gb links. One link carries the Holodeck nested VLAN trunk; the second is dedicated to shared NFS storage.</p>
+<div class="grid two">
+<div class="card">
+<h3>Physical layer</h3>
+<table>
+<tr><th>Component</th><th>Details</th></tr>
+<tr><td>ESXi 1</td><td>Dell PowerEdge T440 • 192.168.8.220 • ~318.6 GB RAM</td></tr>
+<tr><td>ESXi 2</td><td>Dell Precision T7910 • 192.168.8.45 • ~159.9 GB RAM</td></tr>
+<tr><td>vCenter</td><td>192.168.8.221 • vCenter 8.0 U3</td></tr>
+<tr><td>Shared datastore</td><td>Holo-Shared • NFS3 • ~1.38 TB</td></tr>
+</table>
+</div>
+<div class="card">
+<h3>Holodeck / VCF layer</h3>
+<table>
+<tr><th>Component</th><th>Address</th></tr>
+<tr><td>HoloRouter</td><td>192.168.8.222</td></tr>
+<tr><td>Offline Depot</td><td>192.168.8.223</td></tr>
+<tr><td>VCF Installer</td><td>10.1.10.250</td></tr>
+<tr><td>SDDC Manager</td><td>10.1.1.5</td></tr>
+</table>
+</div>
+</div>
+<figure><img src="assets/img/01-vcenter-cluster.webp" alt="vCenter cluster with Holodeck nested VMs"><figcaption>Physical vCenter cluster after Holodeck created the nested ESXi and VCF Installer VMs.</figcaption></figure>
+</section>
+
+<section id="build">
+<h2>Build journey</h2>
+<div class="timeline">
+<div class="phase"><div class="num">1</div><div><h3>Prepare the physical ESXi hosts</h3><p>Both hosts were upgraded to ESXi 8.0 U3. A standard vSwitch named <code>vSwitch-Holo</code> was created with MTU 9000, <code>vmnic2</code> as the 10 Gb uplink and a VLAN 4095 trunk port group named <code>Holo-Trunk</code>.</p>
+<pre><code>esxcli network vswitch standard add -v vSwitch-Holo
+esxcli network vswitch standard set -v vSwitch-Holo -m 9000
+esxcli network vswitch standard uplink add -v vSwitch-Holo -u vmnic2
+esxcli network vswitch standard portgroup add -v vSwitch-Holo -p Holo-Trunk
+esxcli network vswitch standard portgroup set -p Holo-Trunk -v 4095
+esxcli network vswitch standard portgroup policy security set -p Holo-Trunk -a true
+esxcli network vswitch standard portgroup policy security set -p Holo-Trunk -m true
+esxcli network vswitch standard portgroup policy security set -p Holo-Trunk -f true</code></pre></div></div>
+
+<div class="phase"><div class="num">2</div><div><h3>Build shared NFS storage</h3><p>A second 10 Gb direct link on <code>vmnic3</code> was dedicated to NFS. VMkernel interfaces were configured as <code>10.10.10.1</code> and <code>10.10.10.2</code> with MTU 9000. An Ubuntu NFS VM at <code>10.10.10.10</code> exported <code>/srv/nfs/holodeck</code> to both ESXi hosts.</p>
+<pre><code>vmkping -I vmk1 -s 8972 -d 10.10.10.2
+
+# Ubuntu NFS export
+/srv/nfs/holodeck 10.10.10.1(rw,sync,no_subtree_check,no_root_squash) 10.10.10.2(rw,sync,no_subtree_check,no_root_squash)
+
+# Mount from each ESXi host
+esxcli storage nfs add -H 10.10.10.10 -s /srv/nfs/holodeck -v Holo-Shared</code></pre></div></div>
+
+<div class="phase"><div class="num">3</div><div><h3>Deploy HoloRouter and configure Holodeck</h3><p>HoloRouter 9.0 was deployed with both Site A and Site B trunks connected to <code>Holo-Trunk</code>. Holodeck was pointed at the existing vCenter, cluster, shared datastore and trunk network.</p>
+<pre><code>Start-HoloDeckPrecheck -Version "9.0"
+
+New-HoloDeckInstance `
+  -Version "9.0" `
+  -ManagementOnly `
+  -ProvisionOnly</code></pre>
+<p>The provisioning run created four nested ESXi VMs and the VCF Installer appliance. The generated management-domain specification was stored at <code>/holodeck-runtime/specs/management_domain_config_spec_for_vcf_installer.json</code>.</p></div></div>
+</div>
+</section>
+
+<section id="depot">
+<h2>Offline Depot: the key troubleshooting win</h2>
+<p>The online depot initially authenticated successfully but individual VCF binaries such as NSX and Fleet Management returned HTTP 403. The final solution was to use the newer <strong>Software Depot ID → Activation Code</strong> workflow with VCF Download Tool 9.1.1.</p>
+
+<figure><img src="assets/img/02-offline-depot-notebook.webp" alt="VCF Offline Depot maintenance notebook"><figcaption>The Offline Depot appliance included a maintenance notebook and an older VCF Download Tool; the newer tool was installed side-by-side.</figcaption></figure>
+
+<h3>Install VCF Download Tool 9.1.1 side-by-side</h3>
+<pre><code>mkdir -p ~/vdt-9.1.1
+tar -xzf ~/vcf-download-tool-9.1.1.0.25713929.tar.gz -C ~/vdt-9.1.1
+~/vdt-9.1.1/bin/vcf-download-tool --version
+
+# Generate the Software Depot ID
+~/vdt-9.1.1/bin/vcf-download-tool configuration generate --software-depot-id</code></pre>
+
+<h3>List and download only VCF Installer Day-0 binaries</h3>
+<pre><code>~/vdt-9.1.1/bin/vcf-download-tool binaries list   --depot-download-activation-code-file=/home/admin/vcf-activation-code.txt   --vcf-version=9.0.0   --sku=VCF   --automated-install   --type=INSTALL
+
+~/vdt-9.1.1/bin/vcf-download-tool binaries download   --depot-download-activation-code-file=/home/admin/vcf-activation-code.txt   --depot-store=/home/admin/vcf90-depot   --vcf-version=9.0.0.0   --sku=VCF   --automated-install   --type=INSTALL</code></pre>
+
+<p><span class="ok">Result:</span> 7 binaries downloaded successfully, roughly 53 GB total.</p>
+<pre><code>sudo cp -a /home/admin/vcf90-depot/PROD/. /var/www/build/PROD/
+sudo chown -R nginx:nginx /var/www/build
+sudo chmod -R 750 /var/www/build
+
+curl -I http://127.0.0.1/PROD/metadata/productVersionCatalog/v1/productVersionCatalog.json
+# HTTP/1.1 200 OK</code></pre>
+
+<div class="grid two">
+<figure><img src="assets/img/05-binary-management.webp" alt="VCF binary management"><figcaption>VCF Installer binary management before all failed online downloads were retried.</figcaption></figure>
+<figure><img src="assets/img/06-offline-depot-active.webp" alt="Offline depot active"><figcaption>Offline Depot active on 192.168.8.223:80.</figcaption></figure>
+</div>
+<figure><img src="assets/img/07-binaries-success.webp" alt="All VCF binaries successful"><figcaption>All required VCF 9.0 Day-0 binaries staged successfully.</figcaption></figure>
+</section>
+
+<section id="deployment">
+<h2>VCF Installer and management-domain deployment</h2>
+<div class="grid two">
+<figure><img src="assets/img/03-vcf-installer-login.webp" alt="VCF Installer login"><figcaption>VCF Installer at 10.1.10.250.</figcaption></figure>
+<figure><img src="assets/img/04-vcf-installer-home.webp" alt="VCF Installer home"><figcaption>VCF Installer ready for depot configuration and deployment.</figcaption></figure>
+</div>
+
+<h3>Allow HTTP for the lab Offline Depot</h3>
+<pre><code>cp /opt/vmware/vcf/lcm/lcm-app/conf/application-prod.properties    /opt/vmware/vcf/lcm/lcm-app/conf/application-prod.properties.bak
+
+echo 'lcm.depot.adapter.httpsEnabled=false' >> /opt/vmware/vcf/lcm/lcm-app/conf/application-prod.properties
+
+systemctl restart lcm</code></pre>
+
+<h3>Generated management-domain design</h3>
+<table>
+<tr><th>Network</th><th>VLAN</th><th>CIDR</th><th>MTU</th></tr>
+<tr><td>ESXi Management</td><td>10</td><td>10.1.1.0/24</td><td>1500</td></tr>
+<tr><td>vSAN</td><td>11</td><td>10.1.2.0/25</td><td>8000</td></tr>
+<tr><td>vMotion</td><td>13</td><td>10.1.3.0/25</td><td>8000</td></tr>
+<tr><td>NSX TEP</td><td>14</td><td>10.1.3.128/25</td><td>8000</td></tr>
+</table>
+
+<h3>Resolve DNS / NTP validation mismatches</h3>
+<p>The VCF Installer initially used <code>10.1.10.129</code> for DNS/NTP while the Holodeck JSON expected <code>10.1.1.1</code>. The persistent settings were corrected before the final validation run.</p>
+<pre><code>sed -i 's/^DNS=10\.1\.10\.129$/DNS=10.1.1.1/'   /etc/systemd/network/10-eth0.network
+
+sed -i 's/^server 10\.1\.10\.129$/server 10.1.1.1/'   /etc/ntp.conf
+
+networkctl reload
+networkctl reconfigure eth0
+systemctl restart systemd-resolved
+systemctl restart ntpd
+
+resolvectl status eth0
+ntpq -pn</code></pre>
+
+<figure><img src="assets/img/08-validation.webp" alt="VCF validation results"><figcaption>Validation passed after DNS and NTP alignment.</figcaption></figure>
+
+<h3>Deployment result</h3>
+<p>The deployment successfully completed every major management-domain stage: vCenter, SDDC Manager, vSphere cluster configuration, NSX, Fleet Management and VCF Operations.</p>
+<figure><img src="assets/img/09-deployment-success.webp" alt="VCF deployment 100 percent complete"><figcaption>100% complete — VCF 9.0 management-domain deployment successful.</figcaption></figure>
+</section>
+
+<section id="operations">
+<h2>Post-deployment verification</h2>
+<p>The management domain came online as <code>mgmt-a</code>. Evaluation-mode licensing warnings were expected in the lab and did not affect the platform health checks.</p>
+<div class="grid two">
+<figure><img src="assets/img/10-sddc-dashboard.webp" alt="SDDC Manager dashboard"><figcaption>SDDC Manager dashboard immediately after deployment.</figcaption></figure>
+<figure><img src="assets/img/11-management-domain.webp" alt="Management domain active"><figcaption>Management domain <code>mgmt-a</code> active with 4 hosts.</figcaption></figure>
+</div>
+<div class="grid two">
+<figure><img src="assets/img/12-vcf-operations-home.webp" alt="VCF Operations home"><figcaption>VCF Operations discovered the VCF account, domain, vCenter, cluster, hosts and distributed switches.</figcaption></figure>
+<figure><img src="assets/img/13-vcf-health.webp" alt="VCF Health good"><figcaption>VCF Health: instance-a = Good, 0 critical issues, 4 ESXi, 1 vCenter, 1 vSAN cluster, 1 NSX.</figcaption></figure>
+</div>
+
+<h3>Useful logs during deployment</h3>
+<pre><code>tail -F /var/log/vmware/vcf/domainmanager/domainmanager.log
+
+tail -F /var/log/vmware/vcf/domainmanager/domainmanager.log   | grep --line-buffered -Ei 'ERROR|WARN|FAILED|SUCCESS|deploy|workflow|task'
+
+tail -F /var/log/vmware/vcf/lcm/lcm.log</code></pre>
+
+<h3>Windows routes for lab access</h3>
+<pre><code>route -p add 10.1.10.0 mask 255.255.255.0 192.168.8.222
+route -p add 10.1.1.0 mask 255.255.255.0 192.168.8.222</code></pre>
+
+<div class="callout">
+<strong>Security:</strong> no passwords, Broadcom tokens, activation codes or generated VCF credentials are stored in this repository. Any credentials exposed during troubleshooting should be rotated.
+</div>
+</section>
+
+<section>
+<h2>What I learned</h2>
+<div class="grid three">
+<div class="card"><h3>Nested networking matters</h3><p>VLAN 4095 trunking, promiscuous mode, forged transmits and MAC changes are foundational for a nested VCF environment.</p></div>
+<div class="card"><h3>Storage must be truly shared</h3><p>A direct 10 Gb NFS design gave both physical hosts access to the same Holodeck datastore and avoided pinning the nested management domain to a single host.</p></div>
+<div class="card"><h3>Depot authentication ≠ entitlement</h3><p>The online depot could authenticate while protected binaries still returned 403. The newer Software Depot ID / Activation Code flow solved the actual download authorization problem.</p></div>
+</div>
+<p style="margin-top:24px"><a href="../RUNBOOK.md">Open the full command-by-command runbook →</a></p>
+</section>
+</main>
+<div class="footer">MahesanT • VMware Cloud Foundation 9.0 Holodeck Lab • Secrets intentionally excluded</div>
+</body>
+</html>
