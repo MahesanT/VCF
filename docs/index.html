@@ -140,8 +140,6 @@ New-HoloDeckInstance `
 <h2>Offline Depot: the key troubleshooting win</h2>
 <p>The online depot initially authenticated successfully but individual VCF binaries such as NSX and Fleet Management returned HTTP 403. The final solution was to use the newer <strong>Software Depot ID → Activation Code</strong> workflow with VCF Download Tool 9.1.1.</p>
 
-<figure><img src="assets/img/02-offline-depot-notebook.webp" alt="VCF Offline Depot maintenance notebook"><figcaption>The Offline Depot appliance included a maintenance notebook and an older VCF Download Tool; the newer tool was installed side-by-side.</figcaption></figure>
-
 <h3>Install VCF Download Tool 9.1.1 side-by-side</h3>
 <pre><code>mkdir -p ~/vdt-9.1.1
 tar -xzf ~/vcf-download-tool-9.1.1.0.25713929.tar.gz -C ~/vdt-9.1.1
@@ -163,19 +161,12 @@ sudo chmod -R 750 /var/www/build
 curl -I http://127.0.0.1/PROD/metadata/productVersionCatalog/v1/productVersionCatalog.json
 # HTTP/1.1 200 OK</code></pre>
 
-<div class="grid two">
-<figure><img src="assets/img/05-binary-management.webp" alt="VCF binary management"><figcaption>VCF Installer binary management before all failed online downloads were retried.</figcaption></figure>
-<figure><img src="assets/img/06-offline-depot-active.webp" alt="Offline depot active"><figcaption>Offline Depot active on 192.168.8.223:80.</figcaption></figure>
-</div>
 <figure><img src="assets/img/07-binaries-success.webp" alt="All VCF binaries successful"><figcaption>All required VCF 9.0 Day-0 binaries staged successfully.</figcaption></figure>
 </section>
 
 <section id="deployment">
 <h2>VCF Installer and management-domain deployment</h2>
-<div class="grid two">
 <figure><img src="assets/img/03-vcf-installer-login.webp" alt="VCF Installer login"><figcaption>VCF Installer at 10.1.10.250.</figcaption></figure>
-<figure><img src="assets/img/04-vcf-installer-home.webp" alt="VCF Installer home"><figcaption>VCF Installer ready for depot configuration and deployment.</figcaption></figure>
-</div>
 
 <h3>Allow HTTP for the lab Offline Depot</h3>
 <pre><code>cp /opt/vmware/vcf/lcm/lcm-app/conf/application-prod.properties    /opt/vmware/vcf/lcm/lcm-app/conf/application-prod.properties.bak
@@ -207,8 +198,6 @@ systemctl restart ntpd
 resolvectl status eth0
 ntpq -pn</code></pre>
 
-<figure><img src="assets/img/08-validation.webp" alt="VCF validation results"><figcaption>Validation passed after DNS and NTP alignment.</figcaption></figure>
-
 <h3>Deployment result</h3>
 <p>The deployment successfully completed every major management-domain stage: vCenter, SDDC Manager, vSphere cluster configuration, NSX, Fleet Management and VCF Operations.</p>
 <figure><img src="assets/img/09-deployment-success.webp" alt="VCF deployment 100 percent complete"><figcaption>100% complete — VCF 9.0 management-domain deployment successful.</figcaption></figure>
@@ -217,14 +206,7 @@ ntpq -pn</code></pre>
 <section id="operations">
 <h2>Post-deployment verification</h2>
 <p>The management domain came online as <code>mgmt-a</code>. Evaluation-mode licensing warnings were expected in the lab and did not affect the platform health checks.</p>
-<div class="grid two">
-<figure><img src="assets/img/10-sddc-dashboard.webp" alt="SDDC Manager dashboard"><figcaption>SDDC Manager dashboard immediately after deployment.</figcaption></figure>
-<figure><img src="assets/img/11-management-domain.webp" alt="Management domain active"><figcaption>Management domain <code>mgmt-a</code> active with 4 hosts.</figcaption></figure>
-</div>
-<div class="grid two">
-<figure><img src="assets/img/12-vcf-operations-home.webp" alt="VCF Operations home"><figcaption>VCF Operations discovered the VCF account, domain, vCenter, cluster, hosts and distributed switches.</figcaption></figure>
 <figure><img src="assets/img/13-vcf-health.webp" alt="VCF Health good"><figcaption>VCF Health: instance-a = Good, 0 critical issues, 4 ESXi, 1 vCenter, 1 vSAN cluster, 1 NSX.</figcaption></figure>
-</div>
 
 <h3>Useful logs during deployment</h3>
 <pre><code>tail -F /var/log/vmware/vcf/domainmanager/domainmanager.log
