@@ -20,7 +20,7 @@ This repository documents the actual build, troubleshooting, offline depot workf
 
 The full illustrated walkthrough is in `docs/index.html`.
 
-Once GitHub Pages is enabled for this repository using **GitHub Actions**, the site will publish at:
+Public build documentation:
 
 **https://mahesant.github.io/VCF/**
 
@@ -30,7 +30,7 @@ See **[RUNBOOK.md](RUNBOOK.md)** for the command-by-command build notes.
 
 ## Security note
 
-Passwords, Broadcom download tokens, activation codes, and generated VCF credentials are intentionally excluded from this repository. Private RFC1918 lab addresses and lab-only hostnames are shown for reproducibility.
+Passwords, Broadcom download tokens, activation codes, and generated VCF credentials are intentionally excluded from this repository. All published addresses and hostnames are anonymised examples. Original screenshots containing infrastructure identifiers are withheld pending redaction.
 
 ---
 
