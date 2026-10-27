@@ -1,20 +1,20 @@
 # VCF 9.0 Holodeck Deployment Runbook
 
-> This is the command-focused companion to the illustrated GitHub Pages walkthrough. It records the key commands and configuration used in the lab. Secrets are intentionally omitted.
+> This is the command-focused companion to the illustrated GitHub Pages walkthrough. It records the key commands and configuration used in the lab. Secrets are intentionally omitted. IP addresses and hostnames shown here are anonymised examples, not the real lab configuration. Substitute your own network ranges before running commands.
 
 ## 1. Lab architecture
 
 | Component | Address / Detail |
 |---|---|
-| Physical ESXi 1 | `192.168.8.220` — Dell PowerEdge T440, 40 physical cores / 80 logical, ~318.6 GB RAM |
-| Physical ESXi 2 | `192.168.8.45` — Dell Precision T7910, 36 physical cores / 72 logical, ~159.9 GB RAM |
-| vCenter | `192.168.8.221` |
-| HoloRouter | `192.168.8.222` |
-| Offline Depot | `192.168.8.223` |
-| NFS VM | `192.168.8.214` / `10.10.10.10` |
+| Physical ESXi 1 | `192.168.77.20` — Dell PowerEdge T440, 40 physical cores / 80 logical, ~318.6 GB RAM |
+| Physical ESXi 2 | `192.168.77.21` — Dell Precision T7910, 36 physical cores / 72 logical, ~159.9 GB RAM |
+| vCenter | `192.168.77.22` |
+| HoloRouter | `192.168.77.23` |
+| Offline Depot | `192.168.77.24` |
+| NFS VM | `192.168.77.25` / `10.77.20.10` |
 | Shared datastore | `Holo-Shared` |
-| VCF Installer | `10.1.10.250` |
-| SDDC Manager | `10.1.1.5` / `sddcmanager-a.site-a.vcf.lab` |
+| VCF Installer | `10.77.10.250` |
+| SDDC Manager | `10.77.1.5` / `sddcmanager-a.site-a.example.test` |
 | VCF version | `9.0.0.0` |
 | Holodeck | 9.0 |
 | VCF Download Tool | `9.1.1.0.25713929` |
@@ -58,7 +58,7 @@ esxcli network vswitch standard uplink add -v vSwitch-NFS -u vmnic3
 
 esxcli network vswitch standard portgroup add -v vSwitch-NFS -p NFS-Network
 esxcli network ip interface add -i vmk1 -p NFS-Network
-esxcli network ip interface ipv4 set -i vmk1 -I 10.10.10.1 -N 255.255.255.0 -t static
+esxcli network ip interface ipv4 set -i vmk1 -I 10.77.20.1 -N 255.255.255.0 -t static
 esxcli network ip interface set -i vmk1 -m 9000
 ```
 
@@ -71,16 +71,16 @@ esxcli network vswitch standard uplink add -v vSwitch-NFS -u vmnic3
 
 esxcli network vswitch standard portgroup add -v vSwitch-NFS -p NFS-Network
 esxcli network ip interface add -i vmk1 -p NFS-Network
-esxcli network ip interface ipv4 set -i vmk1 -I 10.10.10.2 -N 255.255.255.0 -t static
+esxcli network ip interface ipv4 set -i vmk1 -I 10.77.20.2 -N 255.255.255.0 -t static
 esxcli network ip interface set -i vmk1 -m 9000
 ```
 
 Jumbo-frame validation:
 
 ```bash
-vmkping -I vmk1 -s 8972 -d 10.10.10.2
+vmkping -I vmk1 -s 8972 -d 10.77.20.2
 # reverse direction from the other host
-vmkping -I vmk1 -s 8972 -d 10.10.10.1
+vmkping -I vmk1 -s 8972 -d 10.77.20.1
 ```
 
 ### Ubuntu NFS server
@@ -90,7 +90,7 @@ A Ubuntu Server VM was created on the T440 with:
 - 4 GB RAM
 - 32 GB OS disk
 - 1.4 TB data disk
-- `ens34 = 10.10.10.10/24`, MTU 9000
+- `ens34 = 10.77.20.10/24`, MTU 9000
 
 Install NFS:
 
@@ -118,7 +118,7 @@ UUID=<filesystem-uuid> /srv/nfs/holodeck ext4 defaults,nofail 0 2
 `/etc/exports`:
 
 ```text
-/srv/nfs/holodeck 10.10.10.1(rw,sync,no_subtree_check,no_root_squash) 10.10.10.2(rw,sync,no_subtree_check,no_root_squash)
+/srv/nfs/holodeck 10.77.20.1(rw,sync,no_subtree_check,no_root_squash) 10.77.20.2(rw,sync,no_subtree_check,no_root_squash)
 ```
 
 Apply:
@@ -131,12 +131,12 @@ sudo exportfs -v
 Mount from both ESXi hosts:
 
 ```bash
-esxcli storage nfs add -H 10.10.10.10 -s /srv/nfs/holodeck -v Holo-Shared
+esxcli storage nfs add -H 10.77.20.10 -s /srv/nfs/holodeck -v Holo-Shared
 ```
 
 ## 4. vCenter and cluster
 
-vCenter 8.0 U3 was deployed at `192.168.8.221`.
+vCenter 8.0 U3 was deployed at `192.168.77.22`.
 
 Objects:
 - Datacenter: `Homelab-DC`
@@ -151,11 +151,11 @@ Objects:
 HoloRouter was deployed from `holorouter-9.0.0.ova`.
 
 Key settings:
-- Management IP: `192.168.8.222/24`
-- Gateway: `192.168.8.1`
+- Management IP: `192.168.77.23/24`
+- Gateway: `192.168.77.1`
 - Site A trunk: `Holo-Trunk`
 - Site B trunk: `Holo-Trunk`
-- DNS domain: `site-a.vcf.lab`
+- DNS domain: `site-a.example.test`
 - SSH enabled
 
 Verify PowerShell / Holodeck module:
@@ -226,20 +226,20 @@ Generated management-domain spec:
 VCF Installer address:
 
 ```text
-10.1.10.250
+10.77.10.250
 ```
 
 Persistent Windows route through HoloRouter:
 
 ```powershell
-route -p add 10.1.10.0 mask 255.255.255.0 192.168.8.222
-route -p add 10.1.1.0 mask 255.255.255.0 192.168.8.222
+route -p add 10.77.10.0 mask 255.255.255.0 192.168.77.23
+route -p add 10.77.1.0 mask 255.255.255.0 192.168.77.23
 ```
 
 ## 8. Offline Depot appliance
 
 Offline Depot VM:
-- `192.168.8.223`
+- `192.168.77.24`
 - nginx web root: `/var/www/build`
 
 The bundled download tool was older:
@@ -357,7 +357,7 @@ systemctl status lcm
 ```
 
 The Offline Depot was then configured as:
-- Host: `192.168.8.223`
+- Host: `192.168.77.24`
 - Port: `80`
 
 The three previously failed online downloads (Automation, Fleet Management, NSX) were retried from the Offline Depot and succeeded.
@@ -367,7 +367,7 @@ The three previously failed online downloads (Automation, Fleet Management, NSX)
 Copy the generated spec to the Windows machine:
 
 ```powershell
-scp root@192.168.8.222:/holodeck-runtime/specs/management_domain_config_spec_for_vcf_installer.json `
+scp root@192.168.77.23:/holodeck-runtime/specs/management_domain_config_spec_for_vcf_installer.json `
   "$env:USERPROFILE\Downloads\management_domain_config_spec_for_vcf_installer.json"
 ```
 
@@ -381,17 +381,17 @@ In VCF Installer:
 
 | Network | VLAN | CIDR | MTU |
 |---|---:|---|---:|
-| ESXi Management | 10 | `10.1.1.0/24` | 1500 |
-| vSAN | 11 | `10.1.2.0/25` | 8000 |
-| vMotion | 13 | `10.1.3.0/25` | 8000 |
-| NSX TEP | 14 | `10.1.3.128/25` | 8000 |
+| ESXi Management | 10 | `10.77.1.0/24` | 1500 |
+| vSAN | 11 | `10.77.2.0/25` | 8000 |
+| vMotion | 13 | `10.77.3.0/25` | 8000 |
+| NSX TEP | 14 | `10.77.3.128/25` | 8000 |
 
 Core components:
-- vCenter: `vc-mgmt-a.site-a.vcf.lab`
-- NSX: `nsx-mgmt-a.site-a.vcf.lab`
-- SDDC Manager: `sddcmanager-a.site-a.vcf.lab`
-- VCF Operations: `ops-a.site-a.vcf.lab`
-- Fleet Management: `opslcm-a.site-a.vcf.lab`
+- vCenter: `vc-mgmt-a.site-a.example.test`
+- NSX: `nsx-mgmt-a.site-a.example.test`
+- SDDC Manager: `sddcmanager-a.site-a.example.test`
+- VCF Operations: `ops-a.site-a.example.test`
+- Fleet Management: `opslcm-a.site-a.example.test`
 - Cluster: `cluster-mgmt-01a`
 - vSAN datastore: `vsan-mgmt-01a`
 - vSAN architecture: OSA
@@ -399,7 +399,7 @@ Core components:
 
 ## 12. Fix DNS and NTP validation warnings
 
-The generated spec expected `10.1.1.1`, while VCF Installer initially used `10.1.10.129`.
+The generated spec expected `10.77.1.1`, while VCF Installer initially used `10.77.10.129`.
 
 Persistent DNS configuration was in:
 
@@ -415,10 +415,10 @@ cp /etc/systemd/network/10-eth0.network \
 
 cp /etc/ntp.conf /etc/ntp.conf.bak
 
-sed -i 's/^DNS=10\.1\.10\.129$/DNS=10.1.1.1/' \
+sed -i 's/^DNS=10\.1\.10\.129$/DNS=10.77.1.1/' \
 /etc/systemd/network/10-eth0.network
 
-sed -i 's/^server 10\.1\.10\.129$/server 10.1.1.1/' \
+sed -i 's/^server 10\.1\.10\.129$/server 10.77.1.1/' \
 /etc/ntp.conf
 
 networkctl reload
@@ -438,7 +438,7 @@ ntpq -pn
 The NTP peer eventually showed:
 
 ```text
-*10.1.1.1
+*10.77.1.1
 ```
 
 After rerunning VCF validation, all checks passed.
@@ -460,13 +460,13 @@ Final result: **100% complete / deployment successful**.
 SDDC Manager:
 
 ```text
-sddcmanager-a.site-a.vcf.lab -> 10.1.1.5
+sddcmanager-a.site-a.example.test -> 10.77.1.5
 ```
 
 Windows hosts-file entry:
 
 ```text
-10.1.1.5 sddcmanager-a.site-a.vcf.lab
+10.77.1.5 sddcmanager-a.site-a.example.test
 ```
 
 Flush DNS:
