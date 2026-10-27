@@ -48,6 +48,19 @@ figcaption{padding:10px 14px;color:var(--muted);font-size:13px}
 @media(max-width:850px){.hero-grid,.grid.two,.grid.three{grid-template-columns:1fr 1fr}.nav a{display:none}}
 @media(max-width:560px){.hero-grid,.grid.two,.grid.three{grid-template-columns:1fr}h1{font-size:44px}}
 </style>
+<meta property="og:type" content="website">
+<meta property="og:title" content="VMware Cloud Foundation 9.0 | Holodeck Deployment">
+<meta property="og:description" content="VCF 9.0 nested management-domain build: Holodeck, ESXi, vSAN, NSX, VCF Operations, architecture and runbook.">
+<meta property="og:url" content="https://mahesant.github.io/VCF/">
+<meta property="og:image" content="https://mahesant.github.io/VCF/assets/vcf9-linkedin-preview.png">
+<meta property="og:image:secure_url" content="https://mahesant.github.io/VCF/assets/vcf9-linkedin-preview.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="VMware Cloud Foundation 9.0 Holodeck nested private cloud deployment architecture">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VCF 9.0 on Holodeck">
+<meta name="twitter:image" content="https://mahesant.github.io/VCF/assets/vcf9-linkedin-preview.png">
 </head>
 <body>
 <header>
@@ -75,6 +88,7 @@ figcaption{padding:10px 14px;color:var(--muted);font-size:13px}
 </div>
 
 <main>
+<p class="callout">Privacy note: All IP addresses and hostnames in this public walkthrough are illustrative examples, not live infrastructure identifiers. Adapt every address to your own environment.</p>
 <section id="architecture">
 <h2>Lab architecture</h2>
 <p>The lab spans two physical ESXi hosts connected by direct 10 Gb links. One link carries the Holodeck nested VLAN trunk; the second is dedicated to shared NFS storage.</p>
@@ -83,9 +97,9 @@ figcaption{padding:10px 14px;color:var(--muted);font-size:13px}
 <h3>Physical layer</h3>
 <table>
 <tr><th>Component</th><th>Details</th></tr>
-<tr><td>ESXi 1</td><td>Dell PowerEdge T440 • 192.168.8.220 • ~318.6 GB RAM</td></tr>
-<tr><td>ESXi 2</td><td>Dell Precision T7910 • 192.168.8.45 • ~159.9 GB RAM</td></tr>
-<tr><td>vCenter</td><td>192.168.8.221 • vCenter 8.0 U3</td></tr>
+<tr><td>ESXi 1</td><td>Dell PowerEdge T440 • 192.168.77.20 • ~318.6 GB RAM</td></tr>
+<tr><td>ESXi 2</td><td>Dell Precision T7910 • 192.168.77.21 • ~159.9 GB RAM</td></tr>
+<tr><td>vCenter</td><td>192.168.77.22 • vCenter 8.0 U3</td></tr>
 <tr><td>Shared datastore</td><td>Holo-Shared • NFS3 • ~1.38 TB</td></tr>
 </table>
 </div>
@@ -93,14 +107,14 @@ figcaption{padding:10px 14px;color:var(--muted);font-size:13px}
 <h3>Holodeck / VCF layer</h3>
 <table>
 <tr><th>Component</th><th>Address</th></tr>
-<tr><td>HoloRouter</td><td>192.168.8.222</td></tr>
-<tr><td>Offline Depot</td><td>192.168.8.223</td></tr>
-<tr><td>VCF Installer</td><td>10.1.10.250</td></tr>
-<tr><td>SDDC Manager</td><td>10.1.1.5</td></tr>
+<tr><td>HoloRouter</td><td>192.168.77.23</td></tr>
+<tr><td>Offline Depot</td><td>192.168.77.24</td></tr>
+<tr><td>VCF Installer</td><td>10.77.10.250</td></tr>
+<tr><td>SDDC Manager</td><td>10.77.1.5</td></tr>
 </table>
 </div>
 </div>
-<figure><img src="assets/img/01-vcenter-cluster.webp" alt="vCenter cluster with Holodeck nested VMs"><figcaption>Physical vCenter cluster after Holodeck created the nested ESXi and VCF Installer VMs.</figcaption></figure>
+<div class="callout"><strong>Deployment evidence:</strong> Screenshots are temporarily withheld from the public site until internal addresses and hostnames in the images are redacted.</div>
 </section>
 
 <section id="build">
@@ -116,14 +130,14 @@ esxcli network vswitch standard portgroup policy security set -p Holo-Trunk -a t
 esxcli network vswitch standard portgroup policy security set -p Holo-Trunk -m true
 esxcli network vswitch standard portgroup policy security set -p Holo-Trunk -f true</code></pre></div></div>
 
-<div class="phase"><div class="num">2</div><div><h3>Build shared NFS storage</h3><p>A second 10 Gb direct link on <code>vmnic3</code> was dedicated to NFS. VMkernel interfaces were configured as <code>10.10.10.1</code> and <code>10.10.10.2</code> with MTU 9000. An Ubuntu NFS VM at <code>10.10.10.10</code> exported <code>/srv/nfs/holodeck</code> to both ESXi hosts.</p>
-<pre><code>vmkping -I vmk1 -s 8972 -d 10.10.10.2
+<div class="phase"><div class="num">2</div><div><h3>Build shared NFS storage</h3><p>A second 10 Gb direct link on <code>vmnic3</code> was dedicated to NFS. VMkernel interfaces were configured as <code>10.77.20.1</code> and <code>10.77.20.2</code> with MTU 9000. An Ubuntu NFS VM at <code>10.77.20.10</code> exported <code>/srv/nfs/holodeck</code> to both ESXi hosts.</p>
+<pre><code>vmkping -I vmk1 -s 8972 -d 10.77.20.2
 
 # Ubuntu NFS export
-/srv/nfs/holodeck 10.10.10.1(rw,sync,no_subtree_check,no_root_squash) 10.10.10.2(rw,sync,no_subtree_check,no_root_squash)
+/srv/nfs/holodeck 10.77.20.1(rw,sync,no_subtree_check,no_root_squash) 10.77.20.2(rw,sync,no_subtree_check,no_root_squash)
 
 # Mount from each ESXi host
-esxcli storage nfs add -H 10.10.10.10 -s /srv/nfs/holodeck -v Holo-Shared</code></pre></div></div>
+esxcli storage nfs add -H 10.77.20.10 -s /srv/nfs/holodeck -v Holo-Shared</code></pre></div></div>
 
 <div class="phase"><div class="num">3</div><div><h3>Deploy HoloRouter and configure Holodeck</h3><p>HoloRouter 9.0 was deployed with both Site A and Site B trunks connected to <code>Holo-Trunk</code>. Holodeck was pointed at the existing vCenter, cluster, shared datastore and trunk network.</p>
 <pre><code>Start-HoloDeckPrecheck -Version "9.0"
@@ -161,12 +175,12 @@ sudo chmod -R 750 /var/www/build
 curl -I http://127.0.0.1/PROD/metadata/productVersionCatalog/v1/productVersionCatalog.json
 # HTTP/1.1 200 OK</code></pre>
 
-<figure><img src="assets/img/07-binaries-success.webp" alt="All VCF binaries successful"><figcaption>All required VCF 9.0 Day-0 binaries staged successfully.</figcaption></figure>
+<div class="callout"><strong>Deployment evidence:</strong> Screenshots are temporarily withheld from the public site until internal addresses and hostnames in the images are redacted.</div>
 </section>
 
 <section id="deployment">
 <h2>VCF Installer and management-domain deployment</h2>
-<figure><img src="assets/img/03-vcf-installer-login.webp" alt="VCF Installer login"><figcaption>VCF Installer at 10.1.10.250.</figcaption></figure>
+<div class="callout"><strong>Deployment evidence:</strong> Screenshots are temporarily withheld from the public site until internal addresses and hostnames in the images are redacted.</div>
 
 <h3>Allow HTTP for the lab Offline Depot</h3>
 <pre><code>cp /opt/vmware/vcf/lcm/lcm-app/conf/application-prod.properties    /opt/vmware/vcf/lcm/lcm-app/conf/application-prod.properties.bak
@@ -178,17 +192,17 @@ systemctl restart lcm</code></pre>
 <h3>Generated management-domain design</h3>
 <table>
 <tr><th>Network</th><th>VLAN</th><th>CIDR</th><th>MTU</th></tr>
-<tr><td>ESXi Management</td><td>10</td><td>10.1.1.0/24</td><td>1500</td></tr>
-<tr><td>vSAN</td><td>11</td><td>10.1.2.0/25</td><td>8000</td></tr>
-<tr><td>vMotion</td><td>13</td><td>10.1.3.0/25</td><td>8000</td></tr>
-<tr><td>NSX TEP</td><td>14</td><td>10.1.3.128/25</td><td>8000</td></tr>
+<tr><td>ESXi Management</td><td>10</td><td>10.77.1.0/24</td><td>1500</td></tr>
+<tr><td>vSAN</td><td>11</td><td>10.77.2.0/25</td><td>8000</td></tr>
+<tr><td>vMotion</td><td>13</td><td>10.77.3.0/25</td><td>8000</td></tr>
+<tr><td>NSX TEP</td><td>14</td><td>10.77.3.128/25</td><td>8000</td></tr>
 </table>
 
 <h3>Resolve DNS / NTP validation mismatches</h3>
-<p>The VCF Installer initially used <code>10.1.10.129</code> for DNS/NTP while the Holodeck JSON expected <code>10.1.1.1</code>. The persistent settings were corrected before the final validation run.</p>
-<pre><code>sed -i 's/^DNS=10\.1\.10\.129$/DNS=10.1.1.1/'   /etc/systemd/network/10-eth0.network
+<p>The VCF Installer initially used <code>10.77.10.129</code> for DNS/NTP while the Holodeck JSON expected <code>10.77.1.1</code>. The persistent settings were corrected before the final validation run.</p>
+<pre><code>sed -i 's/^DNS=10\.1\.10\.129$/DNS=10.77.1.1/'   /etc/systemd/network/10-eth0.network
 
-sed -i 's/^server 10\.1\.10\.129$/server 10.1.1.1/'   /etc/ntp.conf
+sed -i 's/^server 10\.1\.10\.129$/server 10.77.1.1/'   /etc/ntp.conf
 
 networkctl reload
 networkctl reconfigure eth0
@@ -200,13 +214,13 @@ ntpq -pn</code></pre>
 
 <h3>Deployment result</h3>
 <p>The deployment successfully completed every major management-domain stage: vCenter, SDDC Manager, vSphere cluster configuration, NSX, Fleet Management and VCF Operations.</p>
-<figure><img src="assets/img/09-deployment-success.webp" alt="VCF deployment 100 percent complete"><figcaption>100% complete — VCF 9.0 management-domain deployment successful.</figcaption></figure>
+<div class="callout"><strong>Deployment evidence:</strong> Screenshots are temporarily withheld from the public site until internal addresses and hostnames in the images are redacted.</div>
 </section>
 
 <section id="operations">
 <h2>Post-deployment verification</h2>
 <p>The management domain came online as <code>mgmt-a</code>. Evaluation-mode licensing warnings were expected in the lab and did not affect the platform health checks.</p>
-<figure><img src="assets/img/13-vcf-health.webp" alt="VCF Health good"><figcaption>VCF Health: instance-a = Good, 0 critical issues, 4 ESXi, 1 vCenter, 1 vSAN cluster, 1 NSX.</figcaption></figure>
+<div class="callout"><strong>Deployment evidence:</strong> Screenshots are temporarily withheld from the public site until internal addresses and hostnames in the images are redacted.</div>
 
 <h3>Useful logs during deployment</h3>
 <pre><code>tail -F /var/log/vmware/vcf/domainmanager/domainmanager.log
@@ -216,8 +230,8 @@ tail -F /var/log/vmware/vcf/domainmanager/domainmanager.log   | grep --line-buff
 tail -F /var/log/vmware/vcf/lcm/lcm.log</code></pre>
 
 <h3>Windows routes for lab access</h3>
-<pre><code>route -p add 10.1.10.0 mask 255.255.255.0 192.168.8.222
-route -p add 10.1.1.0 mask 255.255.255.0 192.168.8.222</code></pre>
+<pre><code>route -p add 10.77.10.0 mask 255.255.255.0 192.168.77.23
+route -p add 10.77.1.0 mask 255.255.255.0 192.168.77.23</code></pre>
 
 <div class="callout">
 <strong>Security:</strong> no passwords, Broadcom tokens, activation codes or generated VCF credentials are stored in this repository. Any credentials exposed during troubleshooting should be rotated.
