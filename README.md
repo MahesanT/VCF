@@ -24,6 +24,12 @@ Public build documentation:
 
 **https://mahesant.github.io/VCF/**
 
+## Architecture documents
+
+- **[High-Level Design (HLD)](HLD.md)** — architecture, logical topology, design decisions, constraints, availability and security.
+- **[Low-Level Design (LLD)](LLD.md)** — anonymised IP plan, VLANs, configuration, inventory, build sequence and validation checks.
+- **[Deployment Runbook](RUNBOOK.md)** — step-by-step implementation and troubleshooting.
+
 ## Detailed runbook
 
 See **[RUNBOOK.md](RUNBOOK.md)** for the command-by-command build notes.
