@@ -92,6 +92,14 @@ figcaption{padding:10px 14px;color:var(--muted);font-size:13px}
 <main>
 <section id="design-documents"><h2>Architecture design documents</h2><div class="grid two"><div class="card"><h3>High-Level Design (HLD)</h3><p>Architecture, solution components, network segmentation, availability, security, dependencies and design decisions.</p><p><a href="https://github.com/MahesanT/VCF/blob/main/HLD.md">Read the HLD →</a></p></div><div class="card"><h3>Low-Level Design (LLD)</h3><p>Anonymised IP allocation, VLANs, host configuration, storage, build sequence and validation matrix.</p><p><a href="https://github.com/MahesanT/VCF/blob/main/LLD.md">Read the LLD →</a></p></div></div></section>
 <p class="callout">Privacy note: All IP addresses and hostnames in this public walkthrough are illustrative examples, not live infrastructure identifiers. Adapt every address to your own environment.</p>
+<section id="architecture-visual">
+<h2>VCF 9.0 architecture at a glance</h2>
+<p class="muted">Physical ESXi infrastructure, shared NFS, Holodeck provisioning, four nested ESXi hosts, and the deployed VCF management domain.</p>
+<figure style="border:1px solid #376b9d;box-shadow:0 14px 55px rgba(17,113,202,.14)">
+<picture><source srcset="assets/vcf9-architecture.webp" type="image/webp"><img src="assets/vcf9-linkedin-preview.png" alt="VMware Cloud Foundation 9.0 Holodeck architecture: two physical ESXi hosts, shared NFS, four nested ESXi hosts, vCenter, SDDC Manager, NSX, vSAN OSA and VCF Operations" loading="lazy" style="width:100%;height:auto"></picture>
+<figcaption>VCF 9.0 Holodeck architecture and deployment workflow — conceptual visualisation; no real network addresses shown.</figcaption>
+</figure>
+</section>
 <section id="architecture">
 <h2>Lab architecture</h2>
 <p>The lab spans two physical ESXi hosts connected by direct 10 Gb links. One link carries the Holodeck nested VLAN trunk; the second is dedicated to shared NFS storage.</p>
